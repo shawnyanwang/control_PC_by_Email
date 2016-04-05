@@ -1,5 +1,5 @@
 import re
-import gmaillib
+import gmail_basic
 from email.mime.text import MIMEText
 from configReader import configReader
 from mccLog import mccLog
@@ -13,13 +13,15 @@ class mailHelper1(object):
         self.username = cfReader.readConfig('Slave', 'username')
         self.password = cfReader.readConfig('Slave', 'password')
         self.bossMail = cfReader.readConfig('Boss', 'mail')
+        self.account = None
         self.loginMail()
         self.configSlaveMail()
 
     def loginMail(self):
         self.mccLog.mccWriteLog('Start to log in gmail')
         try:
-            self.account = gmaillib.account(self.username, self.password)
+            self.account = gmail_basic.gmail(self.username, self.password)
+            self.account.login()
             print 'Success log in Email'
             self.mccLog.mccWriteLog('Log in gmail')
         except Exception,e:
@@ -31,27 +33,31 @@ class mailHelper1(object):
         self.mccLog.mccWriteLog('Start to grap Email')
         try:
             # get the
-            self.mailBody = self.account.inbox(start=0, amount=1)[0]
+            self.account.obtain_last_email()
             self.mccLog.mccWriteLog('Success to grap Email')
-            return self.mailBody
-
+            return True
         except Exception, e:
             self.mccLog.mccError('Fail to grap Email' + str(e))
-            return None
+            return False
 
-    def analysisMail(self, mailBody):
+    def analysisMail(self):
         self.mccLog.mccWriteLog('Start to grap the sender and subject')
         try:
-            subject = re.search('Subject: (.*?)\n',str(self.mailBody),re.S).group(1)
-            # print subject
-            sender = re.search("From: (.*?)\n",str(self.mailBody),re.S).group(1)
+            self.account.parse_email()
+            subject = self.account.get__last_email_subject()
+            print subject
+            message = self.account.get__last_email_message()
+            print message
+            sender = self.account.get_last_email_from_adress()
+            print sender
 
-            # print sender
-            command = {'subject': subject, 'sender': sender}
-            self.mccLog.mccWriteLog('Fail to grap the sender and subject')
+
+
+            command = {'subject': subject, 'sender': sender, 'message':message}
+            self.mccLog.mccWriteLog('Success to grap the sender and subject')
             return command
         except Exception, e:
-            self.mccLog.mccError('Success to grap the sender and subject' + str(e))
+            self.mccLog.mccError('Fail to grap the sender and subject' + str(e))
             return None
 
     def configSlaveMail(self):
@@ -67,7 +73,7 @@ class mailHelper1(object):
         if receiver == 'Slave':
             try:
                 # print self.username, self.username, msg.as_string()
-                self.account.send(self.username+'@gmail.com', subject, body)
+                self.account.send(self.username, subject, body)
                 self.mccLog.mccWriteLog('Success to send mail')
                 return True
             except Exception,e:
@@ -85,6 +91,6 @@ class mailHelper1(object):
 if __name__ == '__main__':
 
     mail = mailHelper1()
-    body = mail.acceptMail()
-    print mail.analysisMail(body)
+    mail.acceptMail()
+    print mail.analysisMail()
     mail.sendMail('OK','Boss')

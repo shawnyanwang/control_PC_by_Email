@@ -37,17 +37,20 @@ class executor(object):
                     self.mccLog.mccError(u'打开文件失败：' + str(e))
                     self.mailHelper1.sendMail('error', 'Boss', e)
             elif subject[:7].lower() == 'sandbox':
-                self.sandBox(subject[8:])
+                self.sandBox(exe['message'])
             else:
                 self.mailHelper1.sendMail('error', 'boss', 'no such command')
 
     def sandBox(self, code):
         """sandbox:test.py$n$import win32api$c$if 1 + 1 == 2:$c$$$$$win32api.MessageBox(0, 'sandbox', 'this is sandbox')"""
 
-        name = code.split('$n$')[0]
-        code = code.split('$n$')[1]
-        codestr = '\n'.join(code.split('$c$'))
-        codestr = codestr.replace('$', ' ')
-        with open(name, 'a') as f:
+        name = code.split('\r\n')[0]
+
+        # code = code.split('/r/n')[1:]
+        codestr = '#'+'\n'.join(code.split('\r\n'))
+        # codestr = '\n'.join(code.split('$c$'))
+        # codestr = codestr.replace('\r\n', '\n ')
+        print codestr
+        with open(name.replace('\r\n',''), 'w+') as f:
             f.write(codestr)
         os.system('python ' + name)

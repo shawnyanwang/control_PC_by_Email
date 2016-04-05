@@ -29,34 +29,48 @@ class gmail():
     # GUSING UIDS INSTEAD OF VOLATILE SEQUENTIAL IDS
     def obtain_last_email(self):
         result, data = self.recieve_box.uid('search', None, "ALL") # search and return uids instead
-        latest_email_uid = data[0].split()[-1]
-        result, data = self.recieve_box.uid('fetch', latest_email_uid, '(RFC822)')
-        self.last_email = data[0][1]
+        try:
+            latest_email_uid = data[0].split()[-1]
+            result, data = self.recieve_box.uid('fetch', latest_email_uid, '(RFC822)')
+            self.last_email = data[0][1]
+        except Exception, e:
+            print 'No email in the inbox!'
+
 
     # PARSING RAW EMAILS
     def parse_email(self):
         import email
-        email_message = email.message_from_string(self.last_email)
-        self.sender = email_message['From']
-        self.subject = email_message['Subject']
-        # print email_message.items() # print all headers
-        accepted_types = ['text/plain']
-        if email_message.is_multipart():
-            for part in email_message.walk():
-                if part.get_content_type() in accepted_types:
-                    self.message = part.get_payload()
-        else:
-            if email_message.get_content_type() in accepted_types:
-                self.message = email_message.get_payload()
+        try:
+            email_message = email.message_from_string(self.last_email)
+            # print email_message
+            self.sender = email_message['From']
+            self.subject = email_message['Subject']
+            # print email_message.items() # print all headers
+            accepted_types = ['text/plain']
+            if email_message.is_multipart():
+                for part in email_message.walk():
+                    if part.get_content_type() in accepted_types:
+                        self.message = part.get_payload()
+            else:
+                if email_message.get_content_type() in accepted_types:
+                    self.message = email_message.get_payload()
 
+        except Exception, e:
+            print 'No email to parse'
     def get_last_email_from_adress(self):
         # return self.sender
-        return re.search('<(.*?)>',str(self.sender),re.S).group(1)
+        if not self.sender: return None
+        if self.sender.find('>')>0:
+            return re.search('<(.*?)>',str(self.sender),re.S).group(1)
+        return self.sender
+
 
     def get__last_email_subject(self):
+        if not self.subject: return None
         return self.subject
 
     def get__last_email_message(self):
+        if not self.message: return None
         return self.message
 
     def send(self, toaddr, subject='', msg=''):
@@ -66,17 +80,18 @@ class gmail():
                "Subject: " + subject,
                    "To: " + toaddr,
                    "MIME-Version: 1.0",
-                   "Content-Type: text/html"]
+                   "Content-Type: text/plain"]
         headers = "\r\n".join(headers)
-        self.send_box.sendmail(fromaddr, toaddr, headers + "\r\n\r\n" + msg)
+        self.send_box.sendmail(fromaddr, toaddr, headers + "\r\n" + msg)
 
 
 if __name__== '__main__':
-    g = gmail()
+    g = gmail('shawnyanwang@gmail.com','bracket[]')
+    # g = gmail()
     g.login()
     g.obtain_last_email()
     g.parse_email()
-    print g.get_last_email_from_adress()
-    print g.get__last_email_subject()
-    print g.get__last_email_message()
-    g.send('shawnyanwang@gmail.com','fox','what does the fox say')
+    # print 'sender:',g.get_last_email_from_adress()
+    # print 'subject:',g.get__last_email_subject()
+    # print 'message:',g.get__last_email_message()
+    g.send('ciyuliu@gmail.com','sandbox','test.py\r\nimport win32api\r\nif 1 + 1 == 2:\r\n  win32api.MessageBox(0, \'sandbox\', \'this is sandbox\')\r\n')

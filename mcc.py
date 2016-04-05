@@ -36,9 +36,9 @@ class MCC(object):
 
     def run(self):
         mailBody = self.mailHelper1.acceptMail()
-        print self.mailHelper1.analysisMail(mailBody)
+        print self.mailHelper1.analysisMail()
         if mailBody:
-            exe = self.mailHelper1.analysisMail(mailBody)
+            exe = self.mailHelper1.analysisMail()
             if exe:
                 self.excutor.execute(exe, self.mailHelper1)
 

@@ -1,0 +1,1 @@
+C:\Python27\python.exe "C:\SW document\My personal\Myself\MCC\control_PC_by_Email\mcc.py"
